@@ -107,6 +107,8 @@ func (p proxy) serveAPI(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, "could not get your tailnet user identity", http.StatusUnauthorized)
 		return
 	}
+	// TODO: we should also add Impersonate-Groups. However, the current
+	// Tailscale API doesn't seem to return user groups in WhoIs response.
 	r.Header.Set("Impersonate-User", who.UserProfile.LoginName)
 
 	// Get k8s SA token and add it for authorization.
