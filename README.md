@@ -18,5 +18,10 @@ For a local minikube setup:
    kubectl create secret generic -n katsnet auth-key --from-literal=key=YOUR_AUTH_KEY
    ```
 1. create k8s RBAC policies for your Tailscale identity, similar to [user-rbac.yaml](user-rbac.yaml)
-1. update your `kubeconfig`: TODO
+1. update your `kubeconfig`:
+   ```
+   katsnet update-kubeconfig minikube
+   # or
+   go run main.go update-kubeconfig minikube
+   ```
 1. done!

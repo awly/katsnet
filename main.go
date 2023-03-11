@@ -10,9 +10,12 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/clientcmd/api"
 	"tailscale.com/client/tailscale"
 	"tailscale.com/tsnet"
 )
@@ -24,6 +27,19 @@ const (
 )
 
 func main() {
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "update-kubeconfig":
+			if err := updateKubeconfig(); err != nil {
+				fmt.Fprintf(os.Stderr, "failed to update kubeconfig: %s\n", err)
+				os.Exit(1)
+			}
+		default:
+			fmt.Fprintf(os.Stderr, "unknown subcommand %q\n", os.Args[1])
+			os.Exit(1)
+		}
+		return
+	}
 	hostname := os.Getenv("TS_HOSTNAME")
 	if hostname == "" {
 		log.Fatal("missing the TS_HOSTNAME env var")
@@ -133,4 +149,33 @@ func newKubeAPIReverseProxy() (*httputil.ReverseProxy, error) {
 		},
 		Rewrite: func(r *httputil.ProxyRequest) { r.SetURL(kubeAPI) },
 	}, nil
+}
+
+func updateKubeconfig() error {
+	if len(os.Args) < 3 {
+		return fmt.Errorf("please specify tailscale hostname to add")
+	}
+	hostname := strings.TrimPrefix(os.Args[2], "http://")
+	hostname = strings.TrimPrefix(hostname, "https://")
+	name := "katsnet-" + hostname
+
+	path := clientcmd.NewDefaultClientConfigLoadingRules().GetDefaultFilename()
+	cfg, err := clientcmd.LoadFromFile(path)
+	if err != nil {
+		return err
+	}
+	cfg.Clusters[name] = &api.Cluster{
+		Server: fmt.Sprintf("http://%s", hostname),
+	}
+	cfg.AuthInfos[name] = &api.AuthInfo{}
+	cfg.Contexts[name] = &api.Context{
+		Cluster:  name,
+		AuthInfo: name,
+	}
+	cfg.CurrentContext = name
+	if err := clientcmd.WriteToFile(*cfg, path); err != nil {
+		return err
+	}
+	fmt.Fprintf(os.Stderr, "%q updated and kubectl is pointed at %q\n", path, hostname)
+	return nil
 }
