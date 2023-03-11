@@ -1,6 +1,23 @@
 # katsnet - kubernetes API on tailscale network
 
-`katsnet` lets you use `kubectl` over Tailscale.
+`katsnet` lets you use `kubectl` over Tailscale. It runs as an [impersonating
+proxy](https://kubernetes.io/docs/reference/access-authn-authz/authentication/#user-impersonation)
+inside of the cluster and joins your tailnet as a node.
+
+## authorization
+
+When your `kubectl` commands go through `katsnet`, they will appear with your Tailscale identity:
+
+* for un-tagged nodes, Kubernetes will see your Tailscale login name (email) as
+  the `User`; it will also see a group named `node:<name of the node you're
+  connecting from>`
+* for tagged nodes, Kubernetes will see groups named after the node tags, like
+  `tag:prod`
+
+You can use the standard Kubernetes RBAC policies to grant these User and Group
+subjects permissions within the cluster. For example,
+[user-rbac.yaml](user-rbac.yaml) grants the `admin` ClusterRole to my login
+name when I connect from an untagged node like my laptop.
 
 ## minikube setup
 
@@ -24,4 +41,13 @@ For a local minikube setup:
    # or
    go run main.go update-kubeconfig minikube
    ```
-1. done!
+1. done, now you can run `kubectl` commands through the tailnet!
+
+## generic setup
+
+Generic setup is pretty much like the minikube setup with a few tweaks:
+
+1. push the `katsnet` image to a registry you control
+1. in `katsnet.yaml` set the Deployment image name to the one you pushed
+1. in `katsnet.yaml` set `TS_HOSTNAME` to the name you want your Tailscale node
+   to have
