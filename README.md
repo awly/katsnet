@@ -51,3 +51,18 @@ Generic setup is pretty much like the minikube setup with a few tweaks:
 1. in `katsnet.yaml` set the Deployment image name to the one you pushed
 1. in `katsnet.yaml` set `TS_HOSTNAME` to the name you want your Tailscale node
    to have
+
+## security implications
+
+Note that any process on any node within the tailnet can make k8s API requests
+with this setup. `katsnet` doesn't do any additional authentication beyond
+tailnet membership.
+
+This means, for example, that you can open
+`http://<katsnet-node-name>/api/v1/namespaces/kube-system/secrets` in the
+browser and see all the secrets in `kube-system` namespace, as long as RBAC
+allows you to. CORS _should_ prevent any random site from making such requests
+on your behalf, but there could be possibilities for attackers triggering
+requests from your machine.
+
+So don't go running this in production just yet.
