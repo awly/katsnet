@@ -4,6 +4,8 @@
 proxy](https://kubernetes.io/docs/reference/access-authn-authz/authentication/#user-impersonation)
 inside of the cluster and joins your tailnet as a node.
 
+![diagram](diagram.png)
+
 ## authorization
 
 When your `kubectl` commands go through `katsnet`, they will appear with your Tailscale identity:
