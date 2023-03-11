@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: katsnet
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: state
+  namespace: katsnet
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: proxy
+  namespace: katsnet
+  labels:
+    name: katsnet
+spec:
+  selector:
+    matchLabels:
+      name: katsnet
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        name: katsnet
+    spec:
+      containers:
+        - name: katsnet
+          image: katsnet
+          imagePullPolicy: Never
+          envFrom:
+            - secretRef:
+                name: auth-key
+          env:
+            - name: TS_HOSTNAME
+              value: minikube
+            - name: TS_STATE
+              value: /tsnet/state
+            - name: TS_AUTHKEY
+              valueFrom:
+                secretKeyRef:
+                  name: auth-key
+                  key: key
+            - name: KUBERNETES_SERVICEACCOUNT_TOKEN_PATH
+              value: /var/run/secrets/serviceaccount/token
+          volumeMounts:
+            - mountPath: "/tsnet/state"
+              name: state
+            - mountPath: "/var/run/secrets/serviceaccount"
+              name: sa-token
+      volumes:
+        - name: state
+          persistentVolumeClaim:
+            claimName: state
+        - name: sa-token
+          projected:
+            sources:
+            - serviceAccountToken:
+                path: token
+                expirationSeconds: 3600 # 1hr
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: impersonator
+rules:
+- apiGroups: [""]
+  resources: ["users", "groups", "serviceaccounts"]
+  verbs: ["impersonate"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: katsnet-impersonation
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: katsnet
+roleRef:
+  kind: ClusterRole
+  name: impersonator
+  apiGroup: rbac.authorization.k8s.io
