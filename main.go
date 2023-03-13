@@ -107,6 +107,15 @@ func (p proxy) serveAPI(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, "could not get your tailnet user identity", http.StatusUnauthorized)
 		return
 	}
+	// Delete any existing impersonation headers to avoid spoofing.
+	r.Header.Del("Impersonate-User")
+	r.Header.Del("Impersonate-Group")
+	r.Header.Del("Impersonate-Uid")
+	for k := range r.Header {
+		if strings.HasPrefix(k, "Impersonate-Extra-") {
+			r.Header.Del(k)
+		}
+	}
 	if len(who.Node.Tags) > 0 {
 		// Tagged nodes don't have a user identity associated, represent them
 		// as just nodes.
