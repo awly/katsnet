@@ -107,10 +107,21 @@ func (p proxy) serveAPI(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, "could not get your tailnet user identity", http.StatusUnauthorized)
 		return
 	}
-	r.Header.Set("Impersonate-User", who.UserProfile.LoginName)
-	r.Header.Set("Impersonate-Group", fmt.Sprintf("node:%s", who.Node.ComputedName))
-	for _, t := range who.Node.Tags {
-		r.Header.Add("Impersonate-Group", t)
+	if len(who.Node.Tags) > 0 {
+		// Tagged nodes don't have a user identity associated, represent them
+		// as just nodes.
+		r.Header.Set("Impersonate-User", fmt.Sprintf("node:%s", who.Node.ComputedName))
+		for _, t := range who.Node.Tags {
+			r.Header.Add("Impersonate-Group", t)
+		}
+	} else {
+		// Untagged nodes represent their user identity. Unfortunately, there
+		// doesn't appear to be a way to get user groups from the Tailscale
+		// API, so we only have a username.
+		//
+		// If there are valid use-cases, we could also add pseudo-groups with
+		// info such as the Tailscale node name.
+		r.Header.Set("Impersonate-User", who.UserProfile.LoginName)
 	}
 
 	// Get k8s SA token and add it for authorization.
