@@ -24,10 +24,6 @@ name when I connect from an untagged node like my laptop.
 ## minikube setup
 
 For a local minikube setup:
-1. build and push the katsnet image:
-   ```
-   minikube image build -t katsnet .
-   ```
 1. apply the base manifests:
    ```
    kubectl apply -f katsnet.yaml
@@ -47,12 +43,9 @@ For a local minikube setup:
 
 ## generic setup
 
-Generic setup is pretty much like the minikube setup with a few tweaks:
-
-1. push the `katsnet` image to a registry you control
-1. in `katsnet.yaml` set the Deployment image name to the one you pushed
-1. in `katsnet.yaml` set `TS_HOSTNAME` to the name you want your Tailscale node
-   to have
+Generic setup is pretty much like the minikube setup, you just have to update
+`TS_HOSTNAME` in `katsnet.yaml` to the name you want your Tailscale node to
+have.
 
 ## security implications
 

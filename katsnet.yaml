@@ -35,8 +35,8 @@ spec:
     spec:
       containers:
         - name: katsnet
-          image: katsnet
-          imagePullPolicy: Never
+          image: ghcr.io/awly/katsnet:latest
+          imagePullPolicy: Always
           envFrom:
             - secretRef:
                 name: auth-key
