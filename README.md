@@ -1,5 +1,11 @@
 # katsnet - kubernetes API on tailscale network
 
+Welp, turns out Tailscale folks [already did
+this](https://tailscale.com/kb/1236/kubernetes-operator/). You should use their
+operator :)
+
+---
+
 `katsnet` lets you use `kubectl` over Tailscale. It runs as an [impersonating
 proxy](https://kubernetes.io/docs/reference/access-authn-authz/authentication/#user-impersonation)
 inside of the cluster and joins your tailnet as a node.
